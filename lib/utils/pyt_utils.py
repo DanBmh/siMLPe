@@ -1,9 +1,10 @@
 # encoding: utf-8
+import argparse
 import os
 import sys
 import time
-import argparse
 from collections import OrderedDict, defaultdict
+
 
 def extant_file(x):
     """
@@ -19,7 +20,7 @@ def extant_file(x):
 def link_file(src, target):
     if os.path.isdir(target) or os.path.isfile(target):
         os.remove(target)
-    os.system('ln -s {} {}'.format(src, target))
+    os.system("ln -s {} {}".format(src, target))
 
 
 def ensure_dir(path):
@@ -29,4 +30,5 @@ def ensure_dir(path):
 
 def _dbg_interactive(var, value):
     from IPython import embed
+
     embed()

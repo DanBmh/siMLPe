@@ -1,14 +1,14 @@
-import os
 import glob
-import numpy as np
+import os
 import pickle as pkl
-from tqdm import tqdm
-from scipy.spatial.transform import Rotation as R
 
-from utils.angle_to_joint import ang2joint
-
+import numpy as np
 import torch
 import torch.utils.data as data
+from scipy.spatial.transform import Rotation as R
+from tqdm import tqdm
+from utils.angle_to_joint import ang2joint
+
 
 class PW3DEval(data.Dataset):
     def __init__(self, config, split_name, paired=True):
@@ -19,8 +19,8 @@ class PW3DEval(data.Dataset):
 
         self._pw3d_file_names = self._get_pw3d_names()
 
-        self.pw3d_motion_input_length =  config.motion.pw3d_input_length
-        self.pw3d_motion_target_length =  config.motion.pw3d_target_length
+        self.pw3d_motion_input_length = config.motion.pw3d_input_length
+        self.pw3d_motion_target_length = config.motion.pw3d_target_length
 
         self.motion_dim = config.motion.dim
         self.shift_step = config.shift_step
@@ -38,19 +38,19 @@ class PW3DEval(data.Dataset):
 
         # create list
         seq_names = []
-        assert self._split_name == 'test'
+        assert self._split_name == "test"
 
-        seq_names = glob.glob(self._pw3d_anno_dir + 'test/*')
+        seq_names = glob.glob(self._pw3d_anno_dir + "test/*")
 
         return seq_names
 
     def _load_skeleton(self):
 
         skeleton_info = np.load(
-                os.path.join(self._root_dir, 'body_models', 'smpl_skeleton.npz')
-                )
-        self.p3d0 = torch.from_numpy(skeleton_info['p3d0']).float()[:, :22]
-        parents = skeleton_info['parents']
+            os.path.join(self._root_dir, "body_models", "smpl_skeleton.npz")
+        )
+        self.p3d0 = torch.from_numpy(skeleton_info["p3d0"]).float()[:, :22]
+        parents = skeleton_info["parents"]
         self.parent = {}
         for i in range(len(parents)):
             if i > 21:
@@ -63,8 +63,8 @@ class PW3DEval(data.Dataset):
         idx = 0
         sample_rate = int(60 // 25)
         for pw3d_seq_name in tqdm(self._pw3d_file_names):
-            pw3d_info = pkl.load(open(pw3d_seq_name, 'rb'), encoding='latin1')
-            pw3d_motion_poses = pw3d_info['poses_60Hz']
+            pw3d_info = pkl.load(open(pw3d_seq_name, "rb"), encoding="latin1")
+            pw3d_motion_poses = pw3d_info["poses_60Hz"]
             for i in range(len(pw3d_motion_poses)):
                 N = len(pw3d_motion_poses[i])
 
@@ -79,20 +79,35 @@ class PW3DEval(data.Dataset):
                 motion_poses[:, 0] = 0
 
                 p3d0_tmp = self.p3d0.repeat([motion_poses.shape[0], 1, 1])
-                motion_poses = ang2joint(p3d0_tmp, torch.tensor(motion_poses).float(), self.parent)
+                motion_poses = ang2joint(
+                    p3d0_tmp, torch.tensor(motion_poses).float(), self.parent
+                )
                 motion_poses = motion_poses.reshape(-1, 22, 3)[:, 4:22].reshape(T, 54)
 
                 self.pw3d_seqs.append(motion_poses)
-                valid_frames = np.arange(0, T - self.pw3d_motion_input_length - self.pw3d_motion_target_length + 1, self.shift_step)
+                valid_frames = np.arange(
+                    0,
+                    T
+                    - self.pw3d_motion_input_length
+                    - self.pw3d_motion_target_length
+                    + 1,
+                    self.shift_step,
+                )
 
-                self.data_idx.extend(zip([idx] * len(valid_frames), valid_frames.tolist()))
+                self.data_idx.extend(
+                    zip([idx] * len(valid_frames), valid_frames.tolist())
+                )
                 idx += 1
 
     def __getitem__(self, index):
         idx, start_frame = self.data_idx[index]
-        frame_indexes = np.arange(start_frame, start_frame + self.pw3d_motion_input_length + self.pw3d_motion_target_length)
+        frame_indexes = np.arange(
+            start_frame,
+            start_frame
+            + self.pw3d_motion_input_length
+            + self.pw3d_motion_target_length,
+        )
         motion = self.pw3d_seqs[idx][frame_indexes]
-        pw3d_motion_input = motion[:self.pw3d_motion_input_length]
-        pw3d_motion_target = motion[self.pw3d_motion_input_length:]
+        pw3d_motion_input = motion[: self.pw3d_motion_input_length]
+        pw3d_motion_target = motion[self.pw3d_motion_input_length :]
         return pw3d_motion_input, pw3d_motion_target
-

@@ -1,18 +1,19 @@
 import argparse
-import os, sys
-from scipy.spatial.transform import Rotation as R
+import os
+import sys
 
 import numpy as np
-from tqdm import tqdm
-from config  import config
-from model import siMLPe as Model
-from utils.misc import rotmat2xyz_torch, rotmat2euler_torch
-from datasets.amass_eval import AMASSEval
-
 import torch
+from config import config
+from datasets.amass_eval import AMASSEval
+from model import siMLPe as Model
+from scipy.spatial.transform import Rotation as R
 from torch.utils.data import DataLoader
+from tqdm import tqdm
+from utils.misc import rotmat2euler_torch, rotmat2xyz_torch
 
-results_keys = ['#2', '#4', '#8', '#10', '#14', '#18', '#22', '#25']
+results_keys = ["#2", "#4", "#8", "#10", "#14", "#18", "#22", "#25"]
+
 
 def get_dct_matrix(N):
     dct_m = np.eye(N)
@@ -25,15 +26,17 @@ def get_dct_matrix(N):
     idct_m = np.linalg.inv(dct_m)
     return dct_m, idct_m
 
-dct_m,idct_m = get_dct_matrix(config.motion.amass_input_length)
+
+dct_m, idct_m = get_dct_matrix(config.motion.amass_input_length)
 dct_m = torch.tensor(dct_m).float().cuda().unsqueeze(0)
 idct_m = torch.tensor(idct_m).float().cuda().unsqueeze(0)
+
 
 def regress_pred(pbar, num_samples, m_p3d_h36):
 
     for (motion_input, motion_target) in pbar:
         motion_input = motion_input.cuda()
-        b,n,c = motion_input.shape
+        b, n, c = motion_input.shape
         num_samples += b
 
         motion_input = motion_input.reshape(b, n, 18, 3)
@@ -49,33 +52,39 @@ def regress_pred(pbar, num_samples, m_p3d_h36):
                 if config.deriv_input:
                     motion_input_ = motion_input.clone()
                     motion_input_ = torch.matmul(dct_m, motion_input_.cuda())
-                    motion_input_ = motion_input_[:, -config.motion.amass_input_length:]
+                    motion_input_ = motion_input_[
+                        :, -config.motion.amass_input_length :
+                    ]
                 else:
                     motion_input_ = motion_input.clone()
                 output = model(motion_input_)
                 output = torch.matmul(idct_m, output)[:, :step, :]
                 if config.deriv_output:
-                    output = output + motion_input[:, -1:, :].repeat(1,step,1)
+                    output = output + motion_input[:, -1:, :].repeat(1, step, 1)
 
-            output = output.reshape(-1, 18*3)
-            output = output.reshape(b,step,-1)
+            output = output.reshape(-1, 18 * 3)
+            output = output.reshape(b, step, -1)
             outputs.append(output)
             motion_input = torch.cat([motion_input[:, step:], output], axis=1)
-        motion_pred = torch.cat(outputs, axis=1)[:,:25]
+        motion_pred = torch.cat(outputs, axis=1)[:, :25]
 
-        b,n,c = motion_target.shape
+        b, n, c = motion_target.shape
         motion_target = motion_target.detach().reshape(b, n, 18, 3)
         motion_gt = motion_target.clone()
 
         motion_pred = motion_pred.detach().cpu()
         motion_pred = motion_pred.reshape(b, n, 18, 3)
 
-        mpjpe_p3d_h36 = torch.sum(torch.mean(torch.norm(motion_pred*1000 - motion_gt*1000, dim=3), dim=2), dim=0)
+        mpjpe_p3d_h36 = torch.sum(
+            torch.mean(torch.norm(motion_pred * 1000 - motion_gt * 1000, dim=3), dim=2),
+            dim=0,
+        )
         m_p3d_h36 += mpjpe_p3d_h36.cpu().numpy()
     m_p3d_h36 = m_p3d_h36 / num_samples
     return m_p3d_h36
 
-def test(model, dataloader) :
+
+def test(model, dataloader):
 
     m_p3d_h36 = np.zeros([config.motion.amass_target_length])
     titles = np.array(range(config.motion.amass_target_length)) + 1
@@ -91,9 +100,11 @@ def test(model, dataloader) :
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
 
-    parser.add_argument('--model-pth', type=str, default=None, help='=encoder path')
+    parser.add_argument("--model-pth", type=str, default=None, help="=encoder path")
     args = parser.parse_args()
 
     model = Model(config)
@@ -104,14 +115,19 @@ if __name__ == "__main__":
     model.cuda()
 
     config.motion.amass_target_length = config.motion.amass_target_length_eval
-    dataset = AMASSEval(config, 'test')
+    dataset = AMASSEval(config, "test")
 
     shuffle = False
     sampler = None
     train_sampler = None
-    dataloader = DataLoader(dataset, batch_size=128,
-                            num_workers=1, drop_last=False,
-                            sampler=sampler, shuffle=shuffle, pin_memory=True)
+    dataloader = DataLoader(
+        dataset,
+        batch_size=128,
+        num_workers=1,
+        drop_last=False,
+        sampler=sampler,
+        shuffle=shuffle,
+        pin_memory=True,
+    )
 
     test(model, dataloader)
-
