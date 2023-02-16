@@ -2,12 +2,10 @@
 
 from __future__ import absolute_import, division, print_function
 
-import argparse
 import os.path as osp
 import sys
 import time
 
-import numpy as np
 from easydict import EasyDict as edict
 
 C = edict()
@@ -64,7 +62,7 @@ C.use_relative_loss = True
 C.pre_dct = False
 C.post_dct = False
 ## Motion Network mlp
-dim_ = 66
+dim_ = C.motion.dim
 C.motion_mlp = edict()
 C.motion_mlp.hidden_dim = dim_
 C.motion_mlp.seq_len = C.motion.h36m_input_length_dct

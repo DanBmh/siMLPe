@@ -1,9 +1,6 @@
 import argparse
 import copy
 import json
-import math
-import os
-import sys
 from test import test
 
 import numpy as np
@@ -31,7 +28,7 @@ parser.add_argument("--weight", type=float, default=1.0, help="=loss weight")
 
 args = parser.parse_args()
 
-torch.use_deterministic_algorithms(True)
+torch.use_deterministic_algorithms(False)
 acc_log = open(args.exp_name, "a")
 torch.manual_seed(args.seed)
 writer = SummaryWriter()
