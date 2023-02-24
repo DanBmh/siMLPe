@@ -1,5 +1,6 @@
 import argparse
 import sys
+import time
 
 import numpy as np
 import torch
@@ -16,9 +17,37 @@ import utils_pipeline
 datapath_save_out = "/datasets/tmp/human36m/{}_forecast_samples.json"
 dconfig = {
     "item_step": 2,
-    "window_step": 20,
+    "window_step": 2,
     "input_n": 50,
     "output_n": 25,
+    "select_joints": [
+        "hip_middle",
+        "hip_right",
+        "knee_right",
+        "ankle_right",
+        # "middlefoot_right",
+        # "forefoot_right",
+        "hip_left",
+        "knee_left",
+        "ankle_left",
+        # "middlefoot_left",
+        # "forefoot_left",
+        # "spine_upper",
+        # "neck",
+        "nose",
+        # "head",
+        "shoulder_left",
+        "elbow_left",
+        "wrist_left",
+        # "hand_left",
+        # "thumb_left",
+        "shoulder_right",
+        "elbow_right",
+        "wrist_right",
+        # "hand_right",
+        # "thumb_right",
+        "shoulder_middle",
+    ],
 }
 
 viz_action = False
@@ -234,4 +263,8 @@ if __name__ == "__main__":
     else:
         batch_size = 1
 
+    stime = time.time()
     print(test(config, model, dataloader, dlen, batch_size))
+
+    ftime = time.time()
+    print("Testing took {} seconds".format(int(ftime - stime)))

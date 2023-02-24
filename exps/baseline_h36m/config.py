@@ -50,7 +50,7 @@ C.motion.h36m_input_length = 50
 C.motion.h36m_input_length_dct = 50
 C.motion.h36m_target_length_train = 10
 C.motion.h36m_target_length_eval = 25
-C.motion.dim = 78
+C.motion.dim = 45
 
 C.data_aug = True
 C.deriv_input = True

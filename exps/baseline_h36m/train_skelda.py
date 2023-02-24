@@ -3,6 +3,7 @@ import copy
 import json
 import os
 import sys
+import time
 
 import numpy as np
 import torch
@@ -25,6 +26,34 @@ dconfig = {
     "window_step": 2,
     "input_n": 50,
     "output_n": 25,
+    "select_joints": [
+        "hip_middle",
+        "hip_right",
+        "knee_right",
+        "ankle_right",
+        # "middlefoot_right",
+        # "forefoot_right",
+        "hip_left",
+        "knee_left",
+        "ankle_left",
+        # "middlefoot_left",
+        # "forefoot_left",
+        # "spine_upper",
+        # "neck",
+        "nose",
+        # "head",
+        "shoulder_left",
+        "elbow_left",
+        "wrist_left",
+        # "hand_left",
+        # "thumb_left",
+        "shoulder_right",
+        "elbow_right",
+        "wrist_right",
+        # "hand_right",
+        # "thumb_right",
+        "shoulder_middle",
+    ],
 }
 tconfig = dict(dconfig)
 tconfig["output_n"] = 10
@@ -194,10 +223,16 @@ def train_step(
 
 # ==================================================================================================
 
+stime = time.time()
 
 model = Model(config)
 model.train()
 model.cuda()
+
+print(
+    "Total number of parameters of the network is: "
+    + str(sum(p.numel() for p in model.parameters() if p.requires_grad))
+)
 
 config.motion.h36m_target_length = config.motion.h36m_target_length_train
 eval_config = copy.deepcopy(config)
@@ -295,3 +330,6 @@ while (nb_iter + 1) < config.cos_lr_total_iters:
         nb_iter += 1
 
 writer.close()
+
+ftime = time.time()
+print("Training took {} seconds".format(int(ftime - stime)))
