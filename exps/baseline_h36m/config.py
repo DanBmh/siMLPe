@@ -103,8 +103,6 @@ C.shift_step = 1
 
 """Display Config"""
 C.print_every = 100
-C.save_every = 5000
-
 
 if __name__ == "__main__":
     print(config.decoder.motion_mlp)

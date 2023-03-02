@@ -56,7 +56,6 @@ dconfig = {
     ],
 }
 tconfig = dict(dconfig)
-tconfig["output_n"] = 10
 
 # ==================================================================================================
 
@@ -95,22 +94,6 @@ acc_log.write("".join("Seed : " + str(args.seed) + "\n"))
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using device: %s" % device)
-
-# ==================================================================================================
-
-
-def prepare_sequences(batch, batch_size: int, split: str, device):
-    sequences = utils_pipeline.make_input_sequence(batch, split)
-
-    # Merge joints and coordinates to a single dimension
-    sequences = sequences.reshape([batch_size, sequences.shape[1], -1])
-
-    # Convert to meters
-    sequences = sequences / 1000.0
-
-    sequences = torch.from_numpy(sequences).to(device)
-
-    return sequences
 
 
 # ==================================================================================================
@@ -237,6 +220,7 @@ print(
 config.motion.h36m_target_length = config.motion.h36m_target_length_train
 eval_config = copy.deepcopy(config)
 eval_config.motion.h36m_target_length = eval_config.motion.h36m_target_length_eval
+tconfig["output_n"] = config.motion.h36m_target_length
 
 # Load preprocessed datasets
 print("Loading datasets ...")
@@ -267,20 +251,43 @@ if config.model_pth is not None:
 nb_iter = 0
 avg_loss = 0.0
 avg_lr = 0.0
+best_loss = np.inf
+n_epochs = 0
 
 while (nb_iter + 1) < config.cos_lr_total_iters:
 
     label_gen_train = utils_pipeline.create_labels_generator(dataset_train, tconfig)
     label_gen_eval = utils_pipeline.create_labels_generator(dataset_eval, dconfig)
+    print("Training epoch {} ...".format(n_epochs))
+    n_epochs += 1
 
-    nbatch = 50
+    nbatch = config.batch_size
     for batch in tqdm.tqdm(
         utils_pipeline.batch_iterate(label_gen_train, batch_size=nbatch),
         total=int(dlen_train / nbatch),
     ):
 
-        sequences_train = prepare_sequences(batch, nbatch, "input", device)
-        sequences_gt = prepare_sequences(batch, nbatch, "target", device)
+        sequences_train = utils_pipeline.make_input_sequence(batch, "input", datamode)
+        sequences_gt = utils_pipeline.make_input_sequence(batch, "target", datamode)
+
+        # augment = True
+        # if augment:
+        #     sequences_train, sequences_gt = utils_pipeline.apply_augmentations(
+        #         sequences_train, sequences_gt
+        #     )
+
+        # Merge joints and coordinates to a single dimension
+        sequences_train = sequences_train.reshape(
+            [nbatch, sequences_train.shape[1], -1]
+        )
+        sequences_gt = sequences_gt.reshape([nbatch, sequences_gt.shape[1], -1])
+
+        # Convert to meters
+        sequences_train = sequences_train / 1000.0
+        sequences_gt = sequences_gt / 1000.0
+
+        sequences_train = torch.from_numpy(sequences_train).to(device)
+        sequences_gt = torch.from_numpy(sequences_gt).to(device)
 
         h36m_motion_input = sequences_train
         h36m_motion_target = sequences_gt
@@ -307,27 +314,34 @@ while (nb_iter + 1) < config.cos_lr_total_iters:
             avg_loss = 0
             avg_lr = 0
 
-        if (nb_iter + 1) % config.save_every == 0:
-            torch.save(
-                model.state_dict(),
-                config.snapshot_dir + "/model-iter-" + str(nb_iter + 1) + ".pth",
-            )
-
-            model.eval()
-            acc_tmp = test(eval_config, model, label_gen_eval, dlen_eval, nbatch)
-            print(acc_tmp)
-
-            acc_log.write("".join(str(nb_iter + 1) + "\n"))
-            line = ""
-            for ii in acc_tmp:
-                line += str(ii) + " "
-            line += "\n"
-            acc_log.write("".join(line))
-            model.train()
-
         if (nb_iter + 1) == config.cos_lr_total_iters:
             break
         nb_iter += 1
+
+    torch.save(
+        model.state_dict(),
+        config.snapshot_dir + "/model-iter-" + str(nb_iter + 1) + ".pth",
+    )
+
+    model.eval()
+    acc_tmp = test(eval_config, model, label_gen_eval, dlen_eval, nbatch, datamode)
+    print(acc_tmp)
+
+    if acc_tmp[-1] < best_loss:
+        best_loss = acc_tmp[-1]
+        torch.save(
+            model.state_dict(),
+            config.snapshot_dir + "/model-best" + ".pth",
+        )
+        print("Saved new best model")
+
+    acc_log.write("".join(str(nb_iter + 1) + "\n"))
+    line = ""
+    for ii in acc_tmp:
+        line += str(ii) + " "
+    line += "\n"
+    acc_log.write("".join(line))
+    model.train()
 
 writer.close()
 

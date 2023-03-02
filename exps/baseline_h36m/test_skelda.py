@@ -55,7 +55,6 @@ viz_action = False
 # ==================================================================================================
 
 
-results_keys = ["#2", "#4", "#8", "#10", "#14", "#18", "#22", "#25"]
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using device: %s" % device)
 
@@ -229,11 +228,7 @@ def test(config, model, dataloader, dlen, nbatch):
         model, pbar, num_samples, joint_used_xyz, m_p3d_h36, dlen, nbatch
     )
 
-    print(m_p3d_h36)
-    ret = {}
-    for j in range(config.motion.h36m_target_length):
-        ret["#{:d}".format(titles[j])] = [m_p3d_h36[j], m_p3d_h36[j]]
-    return [round(ret[key][0], 1) for key in results_keys]
+    return m_p3d_h36
 
 
 # ==================================================================================================
