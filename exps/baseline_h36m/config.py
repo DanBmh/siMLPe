@@ -46,10 +46,36 @@ add_path(osp.join(C.root_dir, "lib"))
 C.h36m_anno_dir = osp.join(C.root_dir, "data/h36m/")
 C.motion = edict()
 
-C.motion.h36m_input_length = 50
-C.motion.h36m_input_length_dct = 50
-C.motion.h36m_target_length_train = 10
-C.motion.h36m_target_length_eval = 25
+# C.motion.h36m_input_length = 50
+# C.motion.h36m_input_length_dct = 50
+# C.motion.h36m_target_length_train = 10
+# C.motion.h36m_target_length_eval = 25
+
+# C.motion.h36m_input_length = 60
+# C.motion.h36m_input_length_dct = 60
+# C.motion.h36m_target_length_train = 30
+# C.motion.h36m_target_length_eval = 30
+
+# C.motion.h36m_input_length = 60
+# C.motion.h36m_input_length_dct = 60
+# C.motion.h36m_target_length_train = 12
+# C.motion.h36m_target_length_eval = 30
+
+C.motion.h36m_input_length = 90
+C.motion.h36m_input_length_dct = 90
+C.motion.h36m_target_length_train = 18
+C.motion.h36m_target_length_eval = 45
+
+# C.motion.h36m_input_length = 20
+# C.motion.h36m_input_length_dct = 20
+# C.motion.h36m_target_length_train = 4
+# C.motion.h36m_target_length_eval = 10
+
+# C.motion.h36m_input_length = 20
+# C.motion.h36m_input_length_dct = 20
+# C.motion.h36m_target_length_train = 10
+# C.motion.h36m_target_length_eval = 10
+
 C.motion.dim = 45
 
 C.data_aug = True
@@ -67,6 +93,7 @@ C.motion_mlp = edict()
 C.motion_mlp.hidden_dim = dim_
 C.motion_mlp.seq_len = C.motion.h36m_input_length_dct
 C.motion_mlp.num_layers = 48
+# C.motion_mlp.num_layers = 96
 C.motion_mlp.with_normalization = True
 C.motion_mlp.spatial_fc_only = False
 C.motion_mlp.norm_axis = "spatial"

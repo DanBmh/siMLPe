@@ -20,14 +20,65 @@ import utils_pipeline
 
 # ==================================================================================================
 
-datapath_save_out = "/datasets/tmp/human36m/{}_forecast_samples.json"
+datamode = "gt-gt"
+
+# # datapath_save_out = "/datasets/tmp/human36m/{}_forecast_samples.json"
+# datapath_save_out = "/datasets/tmp/human36m/{}_forecast_kppspose.json"
+# dconfig = {
+#     # "item_step": 5,
+#     "item_step": 2,
+#     "window_step": 2,
+#     "input_n": 50,
+#     "output_n": 25,
+#     # "input_n": 60,
+#     # "output_n": 30,
+#     "select_joints": [
+#         "hip_middle",
+#         "hip_right",
+#         "knee_right",
+#         "ankle_right",
+#         # "middlefoot_right",
+#         # "forefoot_right",
+#         "hip_left",
+#         "knee_left",
+#         "ankle_left",
+#         # "middlefoot_left",
+#         # "forefoot_left",
+#         # "spine_upper",
+#         # "neck",
+#         "nose",
+#         # "head",
+#         "shoulder_left",
+#         "elbow_left",
+#         "wrist_left",
+#         # "hand_left",
+#         # "thumb_left",
+#         "shoulder_right",
+#         "elbow_right",
+#         "wrist_right",
+#         # "hand_right",
+#         # "thumb_right",
+#         "shoulder_middle",
+#     ],
+# }
+
+
+datapath_save_out = "/datasets/tmp/mocap/{}_forecast_samples.json"
 dconfig = {
     "item_step": 2,
+    # "item_step": 3,
     "window_step": 2,
-    "input_n": 50,
-    "output_n": 25,
+    # "input_n": 30,
+    # "output_n": 15,
+    "input_n": 90,
+    "output_n": 45,
+    # "input_n": 20,
+    # "output_n": 10,
+    # "input_n": 60,
+    # "output_n": 30,
     "select_joints": [
         "hip_middle",
+        # "spine_lower",
         "hip_right",
         "knee_right",
         "ankle_right",
@@ -38,23 +89,30 @@ dconfig = {
         "ankle_left",
         # "middlefoot_left",
         # "forefoot_left",
+        # "spine2",
+        # "spine3",
         # "spine_upper",
         # "neck",
-        "nose",
-        # "head",
-        "shoulder_left",
-        "elbow_left",
-        "wrist_left",
-        # "hand_left",
-        # "thumb_left",
+        # "head_lower",
+        "head_upper",
         "shoulder_right",
         "elbow_right",
         "wrist_right",
-        # "hand_right",
-        # "thumb_right",
+        # "hand_right1",
+        # "hand_right2",
+        # "hand_right3",
+        # "hand_right4",
+        "shoulder_left",
+        "elbow_left",
+        "wrist_left",
+        # "hand_left1",
+        # "hand_left2",
+        # "hand_left3",
+        # "hand_left4"
         "shoulder_middle",
     ],
 }
+
 tconfig = dict(dconfig)
 
 # ==================================================================================================
@@ -73,6 +131,12 @@ parser.add_argument("--num", type=int, default=64, help="=num of blocks")
 parser.add_argument("--weight", type=float, default=1.0, help="=loss weight")
 parser.add_argument(
     "--ckptdir", type=str, default="./log/snapshot/", help="=checkpoint directory"
+)
+parser.add_argument(
+    "--model_weights_path",
+    type=str,
+    default="",
+    help="directory with the model weights to copy",
 )
 
 args = parser.parse_args()
@@ -227,8 +291,9 @@ print("Loading datasets ...")
 dataset_train, dlen_train = utils_pipeline.load_dataset(
     datapath_save_out, "train", dconfig
 )
+esplit = "test" if "mocap" in datapath_save_out else "eval"
 dataset_eval, dlen_eval = utils_pipeline.load_dataset(
-    datapath_save_out, "eval", dconfig
+    datapath_save_out, esplit, dconfig
 )
 
 # initialize optimizer
@@ -246,6 +311,10 @@ if config.model_pth is not None:
     state_dict = torch.load(config.model_pth)
     model.load_state_dict(state_dict, strict=True)
     print_and_log_info(logger, "Loading model path from {} ".format(config.model_pth))
+
+if args.model_weights_path != "":
+    print("Loading model weights from:", args.model_weights_path)
+    model.load_state_dict(torch.load(args.model_weights_path))
 
 ##### ------ training ------- #####
 nb_iter = 0
