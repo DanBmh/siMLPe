@@ -16,6 +16,7 @@ import utils_pipeline
 # ==================================================================================================
 
 datamode = "pred-gt"
+jloss_timestep = 0
 
 dconfig = {
     "item_step": 1,
@@ -129,6 +130,9 @@ def regress_pred(
     nbatch: int,
     dmode: str,
 ):
+    joint_losses = np.zeros([len(dconfig["select_joints"])])
+    max_jlosses = np.zeros([len(dconfig["select_joints"])])
+
     for batch in tqdm.tqdm(
         utils_pipeline.batch_iterate(label_gen, batch_size=nbatch),
         total=int(dlen / nbatch),
@@ -190,13 +194,50 @@ def regress_pred(
         motion_pred = motion_pred.detach().cpu()
         motion_pred = motion_pred.clone().reshape(b, n, config.motion.dim // 3, 3)
 
-        mpjpe_p3d_h36 = torch.sum(
-            torch.mean(torch.norm(motion_pred * 1000 - motion_gt * 1000, dim=3), dim=2),
-            dim=0,
+        motion_pred = motion_pred * 1000
+        motion_gt = motion_gt * 1000
+
+        # Convert to absolute coordinates, which is important for the "pred-gt" error
+        # In mode "pred-pred" or "gt-gt" it hasn't any effect because the last_input_pose is the same,
+        # so no additional error is hidden by it.
+        if datamode == "pred-gt":
+            last_input_pose_gt = batch[0]["input"][-1]["bodies3D"][0]
+            last_input_pose_pred = batch[0]["input"][-1]["predictions"][0]
+            motion_pred = motion_pred.cpu().data.numpy()
+            motion_gt = motion_gt.cpu().data.numpy()
+            motion_pred = utils_pipeline.make_absolute_with_last_input(
+                motion_pred, last_input_pose_pred
+            )
+            motion_gt = utils_pipeline.make_absolute_with_last_input(
+                motion_gt, last_input_pose_gt
+            )
+            motion_pred = torch.from_numpy(motion_pred).float().to("cpu")
+            motion_gt = torch.from_numpy(motion_gt).float().to("cpu")
+
+        loss = torch.sqrt(
+            torch.sum(
+                (motion_pred - motion_gt) ** 2,
+                dim=-1,
+            )
         )
-        m_p3d_h36 += mpjpe_p3d_h36.cpu().numpy()
+
+        floss = torch.sum(torch.mean(loss, dim=2), dim=0)
+        jloss = torch.sum(loss[:, jloss_timestep, :], dim=0)
+        joint_losses += jloss.cpu().data.numpy()
+        max_jlosses = np.maximum(max_jlosses, jloss.cpu().data.numpy())
+
+        m_p3d_h36 += floss.cpu().numpy()
 
     m_p3d_h36 = m_p3d_h36 / num_samples
+
+    avg_jlosses = joint_losses / num_samples
+    avg_jlosses = np.round(avg_jlosses).astype(int)
+    max_jlosses = np.round(max_jlosses).astype(int)
+    print(
+        "Averaged joint losses at timestep", jloss_timestep, "in mm are:", avg_jlosses
+    )
+    print("Maximum joint losses at timestep", jloss_timestep, "in mm are:", max_jlosses)
+
     return m_p3d_h36
 
 
