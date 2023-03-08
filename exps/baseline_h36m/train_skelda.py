@@ -22,96 +22,41 @@ import utils_pipeline
 
 datamode = "gt-gt"
 
-# # datapath_save_out = "/datasets/tmp/human36m/{}_forecast_samples.json"
-# datapath_save_out = "/datasets/tmp/human36m/{}_forecast_kppspose.json"
-# dconfig = {
-#     # "item_step": 5,
-#     "item_step": 2,
-#     "window_step": 2,
-#     "input_n": 50,
-#     "output_n": 25,
-#     # "input_n": 60,
-#     # "output_n": 30,
-#     "select_joints": [
-#         "hip_middle",
-#         "hip_right",
-#         "knee_right",
-#         "ankle_right",
-#         # "middlefoot_right",
-#         # "forefoot_right",
-#         "hip_left",
-#         "knee_left",
-#         "ankle_left",
-#         # "middlefoot_left",
-#         # "forefoot_left",
-#         # "spine_upper",
-#         # "neck",
-#         "nose",
-#         # "head",
-#         "shoulder_left",
-#         "elbow_left",
-#         "wrist_left",
-#         # "hand_left",
-#         # "thumb_left",
-#         "shoulder_right",
-#         "elbow_right",
-#         "wrist_right",
-#         # "hand_right",
-#         # "thumb_right",
-#         "shoulder_middle",
-#     ],
-# }
-
-
-datapath_save_out = "/datasets/tmp/mocap/{}_forecast_samples.json"
 dconfig = {
-    "item_step": 2,
-    # "item_step": 3,
-    "window_step": 2,
-    # "input_n": 30,
-    # "output_n": 15,
-    "input_n": 90,
-    "output_n": 45,
-    # "input_n": 20,
-    # "output_n": 10,
-    # "input_n": 60,
-    # "output_n": 30,
+    "item_step": 1,
+    "window_step": 1,
     "select_joints": [
         "hip_middle",
-        # "spine_lower",
         "hip_right",
         "knee_right",
         "ankle_right",
-        # "middlefoot_right",
-        # "forefoot_right",
         "hip_left",
         "knee_left",
         "ankle_left",
-        # "middlefoot_left",
-        # "forefoot_left",
-        # "spine2",
-        # "spine3",
-        # "spine_upper",
-        # "neck",
-        # "head_lower",
-        "head_upper",
-        "shoulder_right",
-        "elbow_right",
-        "wrist_right",
-        # "hand_right1",
-        # "hand_right2",
-        # "hand_right3",
-        # "hand_right4",
+        "nose",
         "shoulder_left",
         "elbow_left",
         "wrist_left",
-        # "hand_left1",
-        # "hand_left2",
-        # "hand_left3",
-        # "hand_left4"
+        "shoulder_right",
+        "elbow_right",
+        "wrist_right",
         "shoulder_middle",
     ],
 }
+
+# datasets_train = [
+#     "/datasets/preprocessed/mocap/train_forecast_samples_10fps.json",
+#     "/datasets/preprocessed/amass/bmlmovi_train_forecast_samples_10fps.json",
+#     "/datasets/preprocessed/amass/bmlrub_train_forecast_samples_10fps.json",
+#     "/datasets/preprocessed/amass/kit_train_forecast_samples_10fps.json"
+# ]
+
+datasets_train = [
+    "/datasets/preprocessed/human36m/train_forecast_kppspose_10fps.json",
+]
+
+dataset_eval_test = "/datasets/preprocessed/human36m/{}_forecast_kppspose_10fps.json"
+# dataset_eval_test = "/datasets/preprocessed/mocap/{}_forecast_samples_10fps.json"
 
 tconfig = dict(dconfig)
 
@@ -159,6 +104,11 @@ acc_log.write("".join("Seed : " + str(args.seed) + "\n"))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Using device: %s" % device)
 
+
+dconfig["input_n"] = config.motion.h36m_input_length
+dconfig["output_n"] = config.motion.h36m_target_length_eval
+tconfig["input_n"] = config.motion.h36m_input_length
+tconfig["output_n"] = config.motion.h36m_target_length_eval
 
 # ==================================================================================================
 
@@ -288,13 +238,22 @@ tconfig["output_n"] = config.motion.h36m_target_length
 
 # Load preprocessed datasets
 print("Loading datasets ...")
-dataset_train, dlen_train = utils_pipeline.load_dataset(
-    datapath_save_out, "train", dconfig
-)
-esplit = "test" if "mocap" in datapath_save_out else "eval"
-dataset_eval, dlen_eval = utils_pipeline.load_dataset(
-    datapath_save_out, esplit, dconfig
-)
+dataset_train, dlen_train = [], 0
+for dp in datasets_train:
+    cfg = copy.deepcopy(dconfig)
+    if "mocap" in dp:
+        cfg["select_joints"][cfg["select_joints"].index("nose")] = "head_upper"
+
+    ds, dlen = utils_pipeline.load_dataset(dp, "train", cfg)
+    dataset_train.extend(ds["sequences"])
+    dlen_train += dlen
+
+esplit = "test" if "mocap" in dataset_eval_test else "eval"
+cfg = copy.deepcopy(dconfig)
+if "mocap" in dataset_eval_test:
+    cfg["select_joints"][cfg["select_joints"].index("nose")] = "head_upper"
+dataset_eval, dlen_eval = utils_pipeline.load_dataset(dataset_eval_test, esplit, cfg)
+dataset_eval = dataset_eval["sequences"]
 
 # initialize optimizer
 optimizer = torch.optim.Adam(
@@ -339,11 +298,11 @@ while (nb_iter + 1) < config.cos_lr_total_iters:
         sequences_train = utils_pipeline.make_input_sequence(batch, "input", datamode)
         sequences_gt = utils_pipeline.make_input_sequence(batch, "target", datamode)
 
-        # augment = True
-        # if augment:
-        #     sequences_train, sequences_gt = utils_pipeline.apply_augmentations(
-        #         sequences_train, sequences_gt
-        #     )
+        augment = True
+        if augment:
+            sequences_train, sequences_gt = utils_pipeline.apply_augmentations(
+                sequences_train, sequences_gt
+            )
 
         # Merge joints and coordinates to a single dimension
         sequences_train = sequences_train.reshape(

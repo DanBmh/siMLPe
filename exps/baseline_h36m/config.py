@@ -56,15 +56,20 @@ C.motion = edict()
 # C.motion.h36m_target_length_train = 30
 # C.motion.h36m_target_length_eval = 30
 
-# C.motion.h36m_input_length = 60
-# C.motion.h36m_input_length_dct = 60
-# C.motion.h36m_target_length_train = 12
-# C.motion.h36m_target_length_eval = 30
+C.motion.h36m_input_length = 60
+C.motion.h36m_input_length_dct = 60
+C.motion.h36m_target_length_train = 12
+C.motion.h36m_target_length_eval = 30
 
-C.motion.h36m_input_length = 90
-C.motion.h36m_input_length_dct = 90
-C.motion.h36m_target_length_train = 18
-C.motion.h36m_target_length_eval = 45
+# C.motion.h36m_input_length = 90
+# C.motion.h36m_input_length_dct = 90
+# C.motion.h36m_target_length_train = 18
+# C.motion.h36m_target_length_eval = 45
+
+# C.motion.h36m_input_length = 30
+# C.motion.h36m_input_length_dct = 30
+# C.motion.h36m_target_length_train = 6
+# C.motion.h36m_target_length_eval = 15
 
 # C.motion.h36m_input_length = 20
 # C.motion.h36m_input_length_dct = 20
@@ -121,6 +126,8 @@ C.num_workers = 8
 C.cos_lr_max = 1e-5
 C.cos_lr_min = 5e-8
 C.cos_lr_total_iters = 40000
+# C.cos_lr_total_iters = 80000
+# C.cos_lr_total_iters = 13000
 
 C.weight_decay = 1e-4
 C.model_pth = None
