@@ -16,12 +16,12 @@ import utils_pipeline
 # ==================================================================================================
 
 datamode = "pred-gt"
-jloss_timestep = 0
+jloss_timestep = 9
 
 dconfig = {
     "item_step": 1,
     "window_step": 1,
-    # "window_step": 5,
+    # "window_step": 4,
     "select_joints": [
         "hip_middle",
         "hip_right",
@@ -196,23 +196,6 @@ def regress_pred(
 
         motion_pred = motion_pred * 1000
         motion_gt = motion_gt * 1000
-
-        # Convert to absolute coordinates, which is important for the "pred-gt" error
-        # In mode "pred-pred" or "gt-gt" it hasn't any effect because the last_input_pose is the same,
-        # so no additional error is hidden by it.
-        if datamode == "pred-gt":
-            last_input_pose_gt = batch[0]["input"][-1]["bodies3D"][0]
-            last_input_pose_pred = batch[0]["input"][-1]["predictions"][0]
-            motion_pred = motion_pred.cpu().data.numpy()
-            motion_gt = motion_gt.cpu().data.numpy()
-            motion_pred = utils_pipeline.make_absolute_with_last_input(
-                motion_pred, last_input_pose_pred
-            )
-            motion_gt = utils_pipeline.make_absolute_with_last_input(
-                motion_gt, last_input_pose_gt
-            )
-            motion_pred = torch.from_numpy(motion_pred).float().to("cpu")
-            motion_gt = torch.from_numpy(motion_gt).float().to("cpu")
 
         loss = torch.sqrt(
             torch.sum(
