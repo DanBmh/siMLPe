@@ -76,7 +76,11 @@ def prepare_sequences(batch, batch_size: int, split: str, device, dmode):
 
 def viz_joints_3d(sequences_predict, batch):
     batch = batch[0]
-    last_input_pose = batch["input"][-1]["bodies3D"][0]
+
+    if datamode.split("-")[0] == "gt":
+        last_input_pose = batch["input"][-1]["bodies3D"][0]
+    else:
+        last_input_pose = batch["input"][-1]["predictions"][0]
 
     vis_seq_pred = (
         sequences_predict.cpu()
