@@ -16,6 +16,7 @@ import utils_pipeline
 # ==================================================================================================
 
 datamode = "pred-gt"
+# datamode = "pred-pred"
 jloss_timestep = 9
 
 dconfig = {

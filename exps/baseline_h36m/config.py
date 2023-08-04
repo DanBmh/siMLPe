@@ -56,10 +56,10 @@ C.motion = edict()
 # C.motion.h36m_target_length_train = 30
 # C.motion.h36m_target_length_eval = 30
 
-C.motion.h36m_input_length = 60
-C.motion.h36m_input_length_dct = 60
-C.motion.h36m_target_length_train = 12
-C.motion.h36m_target_length_eval = 30
+# C.motion.h36m_input_length = 60
+# C.motion.h36m_input_length_dct = 60
+# C.motion.h36m_target_length_train = 12
+# C.motion.h36m_target_length_eval = 30
 
 # C.motion.h36m_input_length = 90
 # C.motion.h36m_input_length_dct = 90
@@ -71,10 +71,10 @@ C.motion.h36m_target_length_eval = 30
 # C.motion.h36m_target_length_train = 6
 # C.motion.h36m_target_length_eval = 15
 
-# C.motion.h36m_input_length = 20
-# C.motion.h36m_input_length_dct = 20
-# C.motion.h36m_target_length_train = 4
-# C.motion.h36m_target_length_eval = 10
+C.motion.h36m_input_length = 20
+C.motion.h36m_input_length_dct = 20
+C.motion.h36m_target_length_train = 4
+C.motion.h36m_target_length_eval = 10
 
 # C.motion.h36m_input_length = 20
 # C.motion.h36m_input_length_dct = 20

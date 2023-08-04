@@ -20,7 +20,8 @@ import utils_pipeline
 
 # ==================================================================================================
 
-datamode = "gt-gt"
+# datamode = "gt-gt"
+datamode = "pred-pred"
 
 dconfig = {
     "item_step": 1,
@@ -55,8 +56,8 @@ datasets_train = [
     "/datasets/preprocessed/human36m/train_forecast_kppspose_10fps.json",
 ]
 
-dataset_eval_test = "/datasets/preprocessed/human36m/{}_forecast_kppspose_10fps.json"
 # dataset_eval_test = "/datasets/preprocessed/mocap/{}_forecast_samples_10fps.json"
+dataset_eval_test = "/datasets/preprocessed/human36m/{}_forecast_kppspose_10fps.json"
 
 tconfig = dict(dconfig)
 
