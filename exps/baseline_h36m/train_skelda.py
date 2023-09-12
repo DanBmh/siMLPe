@@ -15,7 +15,7 @@ from torch.utils.tensorboard import SummaryWriter
 from utils.logger import get_logger, print_and_log_info
 from utils.pyt_utils import ensure_dir, link_file
 
-sys.path.append("/PoseForecaster/")
+sys.path.append("/PoseForecasters/")
 import utils_pipeline
 
 # ==================================================================================================

@@ -10,7 +10,7 @@ from config import config
 from matplotlib import pyplot as plt
 from model import siMLPe as Model
 
-sys.path.append("/PoseForecaster/")
+sys.path.append("/PoseForecasters/")
 import utils_pipeline
 
 # ==================================================================================================
