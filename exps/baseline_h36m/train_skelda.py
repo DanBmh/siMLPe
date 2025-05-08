@@ -15,49 +15,41 @@ from torch.utils.tensorboard import SummaryWriter
 from utils.logger import get_logger, print_and_log_info
 from utils.pyt_utils import ensure_dir, link_file
 
+# ==================================================================================================
+
 sys.path.append("/PoseForecasters/")
 import utils_pipeline
 
-# ==================================================================================================
-
-# datamode = "gt-gt"
-datamode = "pred-pred"
+datamode = "gt-gt"
+# datamode = "pred-pred"
 
 dconfig = {
-    "item_step": 1,
-    "window_step": 1,
+    "item_step": 2,
+    "window_step": 2,
+    # "item_step": 1,
+    # "window_step": 1,
     "select_joints": [
-        "hip_middle",
         "hip_right",
-        "knee_right",
-        "ankle_right",
         "hip_left",
+        "knee_right",
         "knee_left",
+        "ankle_right",
         "ankle_left",
         "nose",
-        "shoulder_left",
-        "elbow_left",
-        "wrist_left",
         "shoulder_right",
+        "shoulder_left",
         "elbow_right",
+        "elbow_left",
         "wrist_right",
-        "shoulder_middle",
+        "wrist_left",
     ],
 }
 
-# datasets_train = [
-#     "/datasets/preprocessed/mocap/train_forecast_samples_10fps.json",
-#     "/datasets/preprocessed/amass/bmlmovi_train_forecast_samples_10fps.json",
-#     "/datasets/preprocessed/amass/bmlrub_train_forecast_samples_10fps.json",
-#     "/datasets/preprocessed/amass/kit_train_forecast_samples_10fps.json"
-# ]
-
 datasets_train = [
-    "/datasets/preprocessed/human36m/train_forecast_kppspose_10fps.json",
+    "/datasets/preprocessed/human36m/train_forecast_rpt.json",
 ]
 
-# dataset_eval_test = "/datasets/preprocessed/mocap/{}_forecast_samples_10fps.json"
-dataset_eval_test = "/datasets/preprocessed/human36m/{}_forecast_kppspose_10fps.json"
+dataset_eval_test = "/datasets/preprocessed/human36m/{}_forecast_rpt.json"
 
 tconfig = dict(dconfig)
 
@@ -310,10 +302,6 @@ while (nb_iter + 1) < config.cos_lr_total_iters:
             [nbatch, sequences_train.shape[1], -1]
         )
         sequences_gt = sequences_gt.reshape([nbatch, sequences_gt.shape[1], -1])
-
-        # Convert to meters
-        sequences_train = sequences_train / 1000.0
-        sequences_gt = sequences_gt / 1000.0
 
         sequences_train = torch.from_numpy(sequences_train).to(device)
         sequences_gt = torch.from_numpy(sequences_gt).to(device)

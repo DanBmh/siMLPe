@@ -10,40 +10,38 @@ from config import config
 from matplotlib import pyplot as plt
 from model import siMLPe as Model
 
+# ==================================================================================================
+
 sys.path.append("/PoseForecasters/")
 import utils_pipeline
 
-# ==================================================================================================
-
-datamode = "pred-gt"
+datamode = "gt-gt"
 # datamode = "pred-pred"
 jloss_timestep = 9
 
 dconfig = {
-    "item_step": 1,
-    "window_step": 1,
-    # "window_step": 4,
+    "item_step": 2,
+    "window_step": 2,
+    # "item_step": 1,
+    # "window_step": 1,
     "select_joints": [
-        "hip_middle",
         "hip_right",
-        "knee_right",
-        "ankle_right",
         "hip_left",
+        "knee_right",
         "knee_left",
+        "ankle_right",
         "ankle_left",
         "nose",
-        "shoulder_left",
-        "elbow_left",
-        "wrist_left",
         "shoulder_right",
+        "shoulder_left",
         "elbow_right",
+        "elbow_left",
         "wrist_right",
-        "shoulder_middle",
+        "wrist_left",
     ],
 }
 
-dataset_eval_test = "/datasets/preprocessed/human36m/{}_forecast_kppspose_10fps.json"
-# dataset_eval_test = "/datasets/preprocessed/mocap/{}_forecast_samples_10fps.json"
+dataset_eval_test = "/datasets/preprocessed/human36m/{}_forecast_rpt.json"
 dataset_eval_test = dataset_eval_test.format("test")
 
 viz_action = -1
@@ -63,9 +61,6 @@ def prepare_sequences(batch, batch_size: int, split: str, device, dmode):
 
     # Merge joints and coordinates to a single dimension
     sequences = sequences.reshape([batch_size, sequences.shape[1], -1])
-
-    # Convert to meters
-    sequences = sequences / 1000.0
 
     sequences = torch.from_numpy(sequences).to(device)
 
@@ -235,33 +230,7 @@ def regress_pred(
 def test(config, model, dataloader, dlen, nbatch, dmode):
 
     m_p3d_h36 = np.zeros([config.motion.h36m_target_length])
-    titles = np.array(range(config.motion.h36m_target_length)) + 1
-    joint_used_xyz = np.array(
-        [
-            2,
-            3,
-            4,
-            5,
-            7,
-            8,
-            9,
-            10,
-            12,
-            13,
-            14,
-            15,
-            17,
-            18,
-            19,
-            21,
-            22,
-            25,
-            26,
-            27,
-            29,
-            30,
-        ]
-    ).astype(np.int64)
+    joint_used_xyz = None
     num_samples = 0
 
     pbar = dataloader
