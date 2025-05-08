@@ -259,6 +259,11 @@ if __name__ == "__main__":
     model.eval()
     model.cuda()
 
+    print(
+        "total number of parameters of the network is: "
+        + str(sum(p.numel() for p in model.parameters() if p.requires_grad))
+    )
+
     dconfig["input_n"] = config.motion.h36m_input_length
     dconfig["output_n"] = config.motion.h36m_target_length_eval
 
